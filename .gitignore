@@ -1,0 +1,17 @@
+# Logs de Cowrie
+var/
+logs/
+*.log
+
+# Archivos de sesiones y descargas
+tty/
+dl/
+
+# Archivos temporales
+*.tmp
+*.swp
+*.bak
+
+# Cosas de sistema
+.DS_Store
+Thumbs.db
