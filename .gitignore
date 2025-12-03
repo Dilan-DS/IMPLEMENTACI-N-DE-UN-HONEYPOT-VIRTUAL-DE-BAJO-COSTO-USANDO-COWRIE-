@@ -15,3 +15,8 @@ dl/
 # Cosas de sistema
 .DS_Store
 Thumbs.db
+
+prueba-env/
+__pycache__/
+*.pid
+var/

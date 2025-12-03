@@ -1,0 +1,189 @@
+INFORME TECNICO – IMPLEMENTACION DE HONEYPOT COWRIE EN KALI LINUX
+
+Autor: Stephano Dilan Galvez Perez
+Proyecto: Honeypot SSH de Interaccion Media (Cowrie)
+Objetivo: Capturar, registrar y analizar intentos de ataque SSH y comandos maliciosos dentro de una red controlada.
+
+------------------------------------------------------------
+1. INTRODUCCION
+------------------------------------------------------------
+
+Para estudiar ataques automatizados contra servicios SSH, se implemento un honeypot Cowrie en Kali Linux. Este sistema simula un servidor vulnerable y captura intentos de acceso, comandos y actividad sospechosa sin afectar el sistema real.
+
+------------------------------------------------------------
+2. PREPARACION DEL ENTORNO
+------------------------------------------------------------
+
+2.1 Creacion del usuario dedicado:
+
+    sudo adduser cowrie
+
+Si el usuario ya existe, se omite este paso.
+
+Para acceder al usuario:
+
+    sudo su - cowrie
+
+------------------------------------------------------------
+3. INSTALACION DE DEPENDENCIAS DEL SISTEMA
+------------------------------------------------------------
+
+    sudo apt update
+    sudo apt install git python3 python3-venv python3-dev libssl-dev libffi-dev build-essential libpython3-dev -y
+
+Estas dependencias permiten compilar, ejecutar y configurar Cowrie adecuadamente.
+
+------------------------------------------------------------
+4. DESCARGA DE COWRIE
+------------------------------------------------------------
+
+    git clone https://github.com/cowrie/cowrie.git
+    cd cowrie
+
+Esto descarga el proyecto oficial.
+
+------------------------------------------------------------
+5. CREACION DE UN ENTORNO VIRTUAL (ENVIRONMENT)
+------------------------------------------------------------
+
+Se creo un entorno virtual aislado para ejecutar Cowrie:
+
+    python3 -m venv cowrie-env
+
+Para activarlo:
+
+    source cowrie-env/bin/activate
+
+Cuando esta activo se muestra como:
+
+    (cowrie-env) cowrie@kali:~/cowrie$
+
+------------------------------------------------------------
+6. INSTALACION DE DEPENDENCIAS PYTHON
+------------------------------------------------------------
+
+    pip install --upgrade pip
+    pip install -r requirements.txt
+
+Esto instalo Twisted, Cryptography, Treq y demas dependencias internas de Cowrie.
+
+------------------------------------------------------------
+7. CONFIGURACION DEL ARCHIVO PRINCIPAL (cowrie.cfg)
+------------------------------------------------------------
+
+Se copio el archivo base:
+
+    cp etc/cowrie.cfg.dist etc/cowrie.cfg
+
+Se edito:
+
+    nano etc/cowrie.cfg
+
+Modificaciones clave:
+
+1. Activar SSH y puerto:
+
+    [ssh]
+    enabled = true
+    listen_endpoints = tcp:2222:interface=0.0.0.0
+
+Esto permite que Cowrie escuche conexiones SSH en el puerto 2222 para toda la red.
+
+------------------------------------------------------------
+8. DESACTIVAR SSH ORIGINAL DEL SISTEMA
+------------------------------------------------------------
+
+Para evitar conflicto entre el SSH verdadero y Cowrie:
+
+    sudo systemctl stop ssh
+    sudo systemctl disable ssh
+
+------------------------------------------------------------
+9. INICIO DEL HONEYPOT
+------------------------------------------------------------
+
+Activar el entorno:
+
+    source cowrie-env/bin/activate
+
+Iniciar Cowrie:
+
+    cowrie start
+
+Salida esperada:
+
+    CowrieSSHFactory starting on 2222
+    Ready to accept SSH connections
+
+------------------------------------------------------------
+10. VERIFICAR QUE COWRIE ESTA ESCUCHANDO EL PUERTO
+------------------------------------------------------------
+
+    netstat -tulnp | grep 2222
+
+Ejemplo de salida:
+
+    tcp 0.0.0.0:2222 LISTEN python3
+
+------------------------------------------------------------
+11. MONITOREAR LOS ATAQUES EN TIEMPO REAL
+------------------------------------------------------------
+
+    tail -f var/log/cowrie/cowrie.log
+
+Aqui aparecen:
+
+- Conexiones nuevas
+- Intentos de autenticacion
+- Contraseñas usadas
+- Comandos ejecutados
+
+------------------------------------------------------------
+12. PRUEBA MANUAL DEL HONEYPOT (SSH LOCAL)
+------------------------------------------------------------
+
+Desde otra terminal:
+
+    ssh root@localhost -p 2222
+
+Cowrie aceptara la contraseña falsa y mostrara un shell falso:
+
+    root@svr04:~#
+
+Comandos de prueba:
+
+    ls
+    whoami
+    uname -a
+    cat /etc/passwd
+
+Estos apareceran registrados como:
+
+    CMD: ls
+    CMD: whoami
+    CMD: cat /etc/passwd
+
+------------------------------------------------------------
+13. ARCHIVOS JSON DEL SISTEMA
+------------------------------------------------------------
+
+Cowrie genera logs estructurados:
+
+    ls var/log/cowrie/jsonlog/
+    tail -f var/log/cowrie/jsonlog/cowrie.json
+
+Estos se usan para analisis forense.
+
+------------------------------------------------------------
+14. CONCLUSION
+------------------------------------------------------------
+
+1. Cowrie fue instalado y configurado correctamente.
+2. El honeypot simula un servidor Linux vulnerable.
+3. Registra accesos, credenciales y comandos.
+4. Esta listo para recibir ataques reales al colocarlo en modo puente.
+5. El sistema permite obtener evidencia util para investigacion o auditoria.
+
+------------------------------------------------------------
+
+
